@@ -4,51 +4,74 @@
 #   datos = remover_duplicados_y_nulos(datos : pd.dataframe) --pd.dataframe
 #   datos = convertir_str_a_num(datos,col='EDAD') --pd.dataframe
 #   datos = corregir_fechas (datos,col='FECHA1') --pd.dataframe
-#   datos = corregir_fechas (datos,col='FECHA2') --pd.dataframe
+#   datos = convertir_formato_fechas (datos,col='FECHA2') --pd.dataframe
 #   save_data(datos)
 
 
 import numpy as np
-from pathlib import Path
-import os
-from dateutil.parser import parse
-from etl_reporte_llamadas import get_data
 import pandas as pd
-
+import os
+from pathlib import Path
+from etl_reporte_llamadas import get_data
+from dateutil.parser import parse
+import csv
 
 root_dir = Path('.').resolve()
+filename = 'llamadas123_julio_2022.csv'
 
 
 def remover_duplicados_y_nulos(datos):
+    """ Remueve valor duplicados del DF y reemplaza valores nulos en colum 'unidad'
 
+    Args:
+        dataframe (datos): llamadas123_julio_2022
+        columna (UNIDAD): medida de referecia de colum 'EDAD'
+
+    Returns:
+        dataframe: (forma inicial (rows, columns), forma final (rows, columns))
+    """
+
+    print('forma inicial', datos.shape)
     datos = datos.drop_duplicates()
-    datos.reset_index(inplace=True, drop=True)
     print('forma final', datos.shape)
-    col = "UNIDAD"
-    datos[col].fillna('SIN_DATO', inplace=True)
+    datos.fillna('SIN_DATO').value_counts(dropna=True)
+    datos = datos.fillna('SIN_DATO')
+    print(datos)
 
 
-def convertir_str_a_num(datos):
+def convertir_str_a_num(datos, col='EDAD'):
+    datos['EDAD'] = datos['EDAD'].replace({'SIN_DATO': np.nan})
+    x = '0'
+    def f(x): return x if pd.isna(x) == True else int(x)
+    f(x)
+    datos['EDAD'] = datos['EDAD'].apply(f)
+    datos.info()
 
-    col = "EDAD"
-    datos[col].replace({'SIN_DATO': np.nan}, inplace=True)
-    str_num = '28'
-    f(str_num)
-    def f(x): return x if pd.isna(x) else int(x)
-    datos[col] = datos[col].apply(f)
+
+def corregir_fechas_1(datos, col='FECHA_INICIO_DESPLAZAMIENTO_MOVIL'):
+    col = 'FECHA_INICIO_DESPLAZAMIENTO_MOVIL'
+    datos[col] = pd.to_datetime(datos[col], errors='coerce')
+    datos.info()
+    return datos
+
+
+def generar_reporte(datos):
+    return datos
+
+
+def save_data(datos, filename, step='Limpieza_datos'):
+
+    out_name = step + '_' + 'llamadas123_julio_2022.csv'
+    out_path = os.path.join(root_dir, 'data', 'processed', out_name)
+    datos.to_csv(out_path)
 
 
 def main():
     datos = get_data(filename='llamadas123_julio_2022.csv')
-    datos = remover_duplicados_y_nulos(datos)
-    datos = convertir_str_a_num(datos)
+    datos = remover_duplicados_y_nulos(datos) or convertir_str_a_num(
+        datos) or corregir_fechas_1(datos)
+    datos = generar_reporte(datos)
+    datos = save_data(datos, filename='llamadas123_julio_2022.csv')
 
 
 main()
-
-
-# Tratamiento de valores nulos
-# nulo de string = sin_dato - n/a
-# nulo numeros = numpy utilizar funcion nan(not_asigned_name) (np.nan)
-# nulo de fechas = nat (not_asigned_time)
-# libreria para encontrar fecha en ualquier formato, conservando el formato
