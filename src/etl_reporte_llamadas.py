@@ -38,11 +38,11 @@ def generate_report(datos):
     return reporte
 
 
-def save_data(reporte, filename, step='resumen'):
+def save_data(reporte, filename, step='reporte'):
 
     out_name = step + '_' + filename
     out_path = os.path.join(root_dir, 'data', 'processed', out_name)
-    reporte.to_csv(out_path)
+    step.to_csv(out_path)
 
 
 def main():
